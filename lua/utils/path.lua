@@ -3,21 +3,33 @@ local config = require("projection.config")
 local uv = vim.uv
 local M = {}
 local is_windows = vim.fn.has("win32") or vim.fn.has("wsl")
+local stdpath = config.options.datapath or vim.fn.stdpath("data")
 
--- [[ TODO:
+-- [[
 
+-- TODO:
 --  Save project file paths to a good location to read/write from/to
 --  Allow for the user to select whether they will manually add projects or let auto_scanning work
 --  This can be expanded upon by writing to a list of excluded projects individually through the telescope menu
 --  Integrate with Telescope to pick projects
 
+-- BUG:
+-- When changing directories with tabs, the plugin hijacks all tabs and changes their directory.
+-- The fix is more than likely just changing directory for the current buffer only
+
 --]]
 
 -- Check if data dir exists, creates it if it doesn't
 M.ensure_data_dir = function()
-    local data_dir = config.options.datapath .. "/projection"
-    vim.fn.mkdir(data_dir, "p")
-    return data_dir
+    local directory = stdpath .. "projection"
+    local stat = uv.fs_stat(directory)
+    if stat and stat.type == "directory" then
+        return directory
+    else
+        vim.fn.mkdir(directory, "p")
+        print("Data dir not found, creating...")
+    end
+    return directory
 end
 
 -- Normalize path and handle windows filesystem
@@ -50,8 +62,6 @@ M.find_dirs = function(paths, filter, exclude)
         end
         return false
     end
-
-    -- TODO: Add path normalization (Handling ~/dir vs ~/dir/)
 
     local function target_match(pattern)
         if is_excluded(pattern, exclude) then
@@ -119,13 +129,13 @@ M.find_dirs = function(paths, filter, exclude)
     return dirs
 end
 
---- Write table of dirs (input) to file (output)
+--- Write table of directory paths (input) to file (output)
 ---@param dirs string[]
 ---@param output string
 ---@return nil
 M.write_dirs = function(dirs, output)
     local data_dir = M.ensure_data_dir()
-    local file_path = output and output ~= "" and output or (data_dir .. "/paths.txt") -- Check to see if different output path is specified, otherwise use default
+    local file_path = output and output ~= "" and output or (data_dir .. "/projects.txt") -- Check to see if different output path is specified, otherwise use default
 
     -- Default path will be to write to plugin folder
     local f, err = io.open(file_path, "w") -- Open file for writing
@@ -138,29 +148,8 @@ M.write_dirs = function(dirs, output)
         f:write(dir .. "\n")
     end
     f:close()
-
     -- vim.notify("Wrote project paths to: " .. file_path, vim.log.levels.INFO)
     -- vim.notify("Wrote project paths to: " .. file_path, vim.log.levels.DEBUG)
-end
-
---- Removes a dir from the list and adds it to a black list to not be added back through auto_scan
----@param dir string
-M.delete_dir = function(dir) end
-
--- Make this run on an autocommand
-M.auto_scan = function() -- Update these parameters later to take in user options and file args
-    -- BUG: When scanning very large directories (Ex. "~"), autocmd seems to break
-
-    local opts = config.options
-    -- Allows ability to disable auto scanning
-    -- Preserves any existing scanned paths
-    if opts.auto_scan_paths == false then
-         -- vim.notify("auto_scan disabled.", vim.log.levels.DEBUG)
-        return
-    end
-
-    local dirs = M.find_dirs(opts.paths, opts.filters, opts.exclude_paths)
-    M.write_dirs(dirs, "")
 end
 
 -- Returns a list of project directories

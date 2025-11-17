@@ -2,6 +2,7 @@
 local M = {}
 
 ---@type ProjectionOptions
+---@diagnostic disable-next-line: missing-fields
 M.options = {}
 
 ---@class ProjectionOptions
@@ -15,12 +16,14 @@ local defaults = {
 
     -- Filter project files to search for
     -- TODO: Add pattern globbing later
-    filters = { ".git", "stylua.toml" },
+    filters = { ".git" }, -- Don't want to force defaults on anyone
 
     -- User option to allow for manual project tracking
-    auto_scan_paths = true,
-    -- Files made by the plugin will be stored here
-    -- TODO: Refactor so that way user can declare their own datapath to store their project files
+    -- auto_scan_paths = true, -- Legacy, unimplemented
+
+    -- Plugin files are stored in vim.fn.stdpath("data")
+    -- You can change it here if you have something better in mind...
+    -- TEST: Test this later
     datapath = vim.fn.stdpath("data"),
 }
 

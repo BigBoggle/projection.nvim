@@ -24,24 +24,20 @@ Install via your favorite package manager:
 Ex:
 ```lua
 return {
-    "Zbolt50/projection.nvim",
-    -- The following defaults are included
-    -- NOTE: some of these I haven't implemented fully, but have kept them in the docs just as a reminder they exist
+    "BigBoggle/projection.nvim",
     config = function()
     require("projection").setup({
         -- projection looks here for paths by default, might add it via lsp later
         paths = { "" },
 
-        -- Don't look here for projects
+        -- Ignore these specified project directories, though you can use ':IgnoreProjects' as well
         exclude_paths = { "" },
 
         -- Filter project files to search for
-        filters = { ".git", "stylua.toml" },
+        filters = { ".git" },
 
-        -- User option to allow for manual project tracking
-        auto_scan_paths = true,
 
-        -- Files made by the plugin will be stored here
+        -- Change the default path for where project lists are stored.
         datapath = vim.fn.stdpath("data"),
     })
     end,
